@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ExtensionMachine</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      width: 300px;
+      height: 580px;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    .panels {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Header ── */
+    .header {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid #21262d;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header-icon { font-size: 18px; line-height: 1; }
+    .header-text h1 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f0f6fc;
+      letter-spacing: 0.2px;
+    }
+    .header-text p {
+      font-size: 10px;
+      color: #484f58;
+      margin-top: 1px;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      background: #0d1117;
+      border-bottom: 1px solid #21262d;
+      padding: 0 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 9px 2px 7px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      color: #484f58;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: #8b949e; }
+    .tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+    .tab-emoji { font-size: 13px; line-height: 1; }
+    .tab-label {
+      font-size: 8.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      line-height: 1;
+    }
+
+    /* ── Panel ── */
+    .tab-panel { display: none; padding: 12px; height: 100%; overflow-y: auto; }
+    .tab-panel.active { display: block; }
+    .tab-panel::-webkit-scrollbar { width: 4px; }
+    .tab-panel::-webkit-scrollbar-track { background: transparent; }
+    .tab-panel::-webkit-scrollbar-thumb { background: #21262d; border-radius: 4px; }
+
+    /* ── Card ── */
+    .card {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 11px 12px;
+      margin-bottom: 8px;
+    }
+    .card:last-child { margin-bottom: 0; }
+
+    /* ── Card title ── */
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #e6edf3;
+      margin-bottom: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title-left { display: flex; align-items: center; gap: 6px; }
+    .card-icon { font-size: 13px; line-height: 1; }
+
+    /* ── Toggle row ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .toggle-row:last-child { margin-bottom: 0; }
+    .toggle-label { font-size: 11.5px; color: #8b949e; }
+    .toggle-label b { font-weight: 500; color: #c9d1d9; }
+
+    /* ── Switch ── */
+    .switch { position: relative; width: 34px; height: 18px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 18px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 12px; width: 12px;
+      left: 2px; top: 2px;
+      background: #484f58;
+      border-radius: 50%;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .switch input:checked + .slider { background: #1f4068; border-color: #58a6ff; }
+    .switch input:checked + .slider::before { transform: translateX(16px); background: #58a6ff; }
+
+    /* ── Badge ── */
+    .badge {
+      font-size: 9px;
+      font-weight: 600;
+      border-radius: 4px;
+      padding: 1px 6px;
+      letter-spacing: 0.4px;
+      background: #21262d;
+      color: #484f58;
+      border: 1px solid #30363d;
+    }
+    .badge.on { background: #0d2b18; color: #3fb950; border-color: #1f5c2e; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: #238636; color: #fff; border: 1px solid #2ea043; }
+    .btn-primary:hover { background: #2ea043; }
+    .btn-success { background: #1a7f37 !important; color: #fff !important; }
+    .btn-ghost {
+      background: #21262d;
+      color: #8b949e;
+      border: 1px solid #30363d;
+    }
+    .btn-ghost:hover { background: #30363d; color: #c9d1d9; }
+    .btn-del { background: #1f0a0a; color: #f85149; border: 1px solid #3a1010; }
+    .btn-del:hover { background: #2d0f0f; }
+    .btn-sm { padding: 3px 8px; font-size: 11px; width: auto; border-radius: 5px; }
+
+    /* ── Status / count ── */
+    .tab-count { font-size: 11px; color: #484f58; margin-bottom: 8px; text-align: center; }
+    .status { font-size: 11px; color: #484f58; text-align: center; margin-top: 6px; min-height: 13px; }
+
+    /* ── Session ── */
+    .row { display: flex; gap: 6px; margin-bottom: 8px; }
+    .input {
+      flex: 1;
+      padding: 6px 9px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-size: 11.5px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .input::placeholder { color: #30363d; }
+    .input:focus { border-color: #58a6ff; }
+    .session-list { max-height: 110px; overflow-y: auto; }
+    .session-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #21262d;
+    }
+    .session-item:last-child { border-bottom: none; }
+    .session-name {
+      font-size: 11px;
+      color: #c9d1d9;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-right: 6px;
+    }
+    .session-meta { font-size: 10px; color: #484f58; margin-right: 5px; flex-shrink: 0; }
+    .session-btns { display: flex; gap: 3px; flex-shrink: 0; }
+    .empty { font-size: 11px; color: #30363d; text-align: center; padding: 10px 0; }
+
+    /* ── Tab limiter ── */
+    .limit-row { display: flex; align-items: center; gap: 7px; margin-top: 7px; }
+    .input-sm {
+      width: 50px;
+      padding: 4px 7px;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-size: 12px;
+      outline: none;
+      text-align: center;
+    }
+    .input-sm:focus { border-color: #58a6ff; }
+    .muted { font-size: 11px; color: #484f58; }
+
+    /* ── UA preset ── */
+    .ua-preset-row { margin-top: 8px; }
+    select.input { appearance: none; cursor: pointer; }
+
+    /* ── Note ── */
+    .note {
+      font-size: 10px;
+      color: #484f58;
+      margin-top: 6px;
+      line-height: 1.5;
+      border-top: 1px solid #21262d;
+      padding-top: 6px;
+    }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: #21262d; margin: 0 -12px 8px; }
+
+    /* ── Footer ── */
+    .footer {
+      flex-shrink: 0;
+      padding: 8px 16px 9px;
+      border-top: 1px solid #21262d;
+      text-align: center;
+      font-size: 10px;
+      color: #30363d;
+    }
+    .footer a {
+      color: #484f58;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer a:hover { color: #58a6ff; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div class="header-icon">⚙️</div>
+  <div class="header-text">
+    <h1>ExtensionMachine</h1>
+    <p>Your browser, enhanced.</p>
+  </div>
+</div>
+
+<!-- ── Tabs ── -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="privacy">
+    <span class="tab-emoji">🔒</span>
+    <span class="tab-label">Privacy</span>
+  </button>
+  <button class="tab-btn" data-tab="page">
+    <span class="tab-emoji">🖥</span>
+    <span class="tab-label">Page</span>
+  </button>
+  <button class="tab-btn" data-tab="clean">
+    <span class="tab-emoji">🧹</span>
+    <span class="tab-label">Clean</span>
+  </button>
+  <button class="tab-btn" data-tab="prod">
+    <span class="tab-emoji">⚡</span>
+    <span class="tab-label">Prod</span>
+  </button>
+  <button class="tab-btn" data-tab="tools">
+    <span class="tab-emoji">🔧</span>
+    <span class="tab-label">Tools</span>
+  </button>
+</div>
+
+<div class="panels">
+
+<!-- ── PRIVACY ── -->
+<div class="tab-panel active" id="tab-privacy">
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🚫</span> Ad Blocker</div>
+      <span class="badge" id="ads-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Block ad network requests</div>
+      <label class="switch"><input type="checkbox" id="ads-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">93 ad networks — Google Ads, Criteo, Taboola, Outbrain &amp; more.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">👁️</span> Tracker Blocker</div>
+      <span class="badge" id="trackers-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Block analytics &amp; tracking pixels</div>
+      <label class="switch"><input type="checkbox" id="trackers-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">65 trackers — GA, Meta Pixel, Hotjar, Mixpanel, Amplitude &amp; more.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🔗</span> UTM Stripper</div>
+      <span class="badge" id="utm-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Strip tracking params from URLs</div>
+      <label class="switch"><input type="checkbox" id="utm-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Removes utm_*, fbclid, gclid, msclkid &amp; more on navigation.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🛡️</span> Referrer Blocker</div>
+      <span class="badge" id="referer-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Strip Referer request header</div>
+      <label class="switch"><input type="checkbox" id="referer-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Sites won't see which page you navigated from.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">📡</span> WebRTC Leak Blocker</div>
+      <span class="badge" id="webrtc-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Prevent real IP exposure via WebRTC</div>
+      <label class="switch"><input type="checkbox" id="webrtc-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Disables non-proxied UDP. Protects your IP even behind a VPN.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🎨</span> Canvas Fingerprint Blocker</div>
+      <span class="badge" id="canvas-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Add noise to canvas reads</div>
+      <label class="switch"><input type="checkbox" id="canvas-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Adds ±1 RGB noise per pixel — invisible to you, breaks fingerprinting.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🎭</span> User-Agent Spoofer</div>
+      <span class="badge" id="ua-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Spoof browser identity</div>
+      <label class="switch"><input type="checkbox" id="ua-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="ua-preset-row" id="ua-preset-row" style="display:none">
+      <select class="input" id="ua-preset">
+        <option value="chrome-win">Chrome / Windows</option>
+        <option value="chrome-mac">Chrome / macOS</option>
+        <option value="firefox-win">Firefox / Windows</option>
+        <option value="safari-mac">Safari / macOS</option>
+        <option value="mobile-ios">Mobile Safari / iOS</option>
+        <option value="mobile-android">Chrome / Android</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🍪</span> Cookie Banner Clicker</div>
+      <span class="badge" id="cookie-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Auto-accept cookie banners</div>
+      <label class="switch"><input type="checkbox" id="cookie-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Targets common consent dialogs. Reload tabs after enabling.</div>
+  </div>
+
+</div>
+
+<!-- ── PAGE ── -->
+<div class="tab-panel" id="tab-page">
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🔇</span> Autoplay Stopper</div>
+      <span class="badge" id="autostop-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Block video &amp; audio autoplay</div>
+      <label class="switch"><input type="checkbox" id="autostop-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Reload tabs after enabling for full effect.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🌑</span> Force Dark Mode</div>
+      <span class="badge" id="darkmode-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Invert colors on all pages</div>
+      <label class="switch"><input type="checkbox" id="darkmode-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">CSS invert + hue-rotate. Reload tabs after enabling.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">📖</span> Reader Mode</div>
+    </div>
+    <button class="btn btn-primary" id="reader-btn">Activate Reader Mode</button>
+    <div class="note" style="margin-top:6px">Strips page to clean text. Click again to exit.</div>
+  </div>
+
+</div>
+
+<!-- ── CLEAN ── -->
+<div class="tab-panel" id="tab-clean">
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">📌</span> Sticky Element Killer</div>
+      <span class="badge" id="sticky-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Remove fixed headers &amp; sidebars</div>
+      <label class="switch"><input type="checkbox" id="sticky-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Kills sticky nav bars that follow you while scrolling.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">💬</span> Chat Widget Hider</div>
+      <span class="badge" id="chathide-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Hide chat bubbles &amp; support widgets</div>
+      <label class="switch"><input type="checkbox" id="chathide-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Hides Intercom, Drift, Zendesk, Crisp, HubSpot, Tidio &amp; more.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🧱</span> Paywall Bypass Helper</div>
+      <span class="badge" id="paywall-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Remove overlay &amp; blur paywalls</div>
+      <label class="switch"><input type="checkbox" id="paywall-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Removes soft paywalls &amp; blur overlays. Won't work on hard server-side paywalls.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">📱</span> App Banner Remover</div>
+      <span class="badge" id="appbanner-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Remove "get our app" banners</div>
+      <label class="switch"><input type="checkbox" id="appbanner-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Removes smart app banners on YouTube, Reddit &amp; other sites.</div>
+  </div>
+
+</div>
+
+<!-- ── PRODUCTIVITY ── -->
+<div class="tab-panel" id="tab-prod">
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">💾</span> Session Saver</div>
+    </div>
+    <div class="row">
+      <input class="input" type="text" id="session-name" placeholder="Name this session…" maxlength="40" />
+      <button class="btn btn-primary btn-sm" id="session-save-btn">Save</button>
+    </div>
+    <div class="session-list" id="session-list"><div class="empty">No saved sessions</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🔍</span> Duplicate Tab Finder</div>
+    </div>
+    <button class="btn btn-primary" id="find-dupes-btn">Find &amp; Close Duplicates</button>
+    <div class="status" id="dupe-status"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🚦</span> Tab Limiter</div>
+      <span class="badge" id="tablimit-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Warn when limit exceeded</div>
+      <label class="switch"><input type="checkbox" id="tablimit-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="limit-row" id="limit-row" style="display:none">
+      <span class="muted">Limit:</span>
+      <input class="input-sm" type="number" id="tab-limit-input" min="1" max="200" value="20" />
+      <span class="muted">tabs</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── TOOLS ── -->
+<div class="tab-panel" id="tab-tools">
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">📋</span> Copy Tab URLs</div>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Scope: <b id="scope-label">Current window</b></div>
+      <label class="switch"><input type="checkbox" id="all-windows-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="tab-count" id="tab-count">Loading…</div>
+    <button class="btn btn-primary" id="copy-btn">Copy URLs</button>
+    <div class="status" id="copy-status"></div>
+  </div>
+</div>
+
+</div><!-- end .panels -->
+
+<!-- ── Footer ── -->
+<div class="footer">
+  by <a href="https://x.com/themoneygps" target="_blank">David Quintieri @themoneygps</a>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
