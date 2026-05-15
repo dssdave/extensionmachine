@@ -82,4 +82,4 @@ All features are **off by default**. Open the extension popup and toggle what yo
 
 ## Built by
 
-[David Quintieri @themoneygps](https://x.com/themoneygps)
+David Quintieri — find me as [@themoneygps](https://x.com/themoneygps) on social media.
