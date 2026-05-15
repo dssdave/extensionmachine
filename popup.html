@@ -243,6 +243,29 @@
     .ua-preset-row { margin-top: 8px; }
     select.input { appearance: none; cursor: pointer; }
 
+    /* ── Clipboard History ── */
+    .clip-list { max-height: 118px; overflow-y: auto; margin-top: 2px; }
+    .clip-list::-webkit-scrollbar { width: 3px; }
+    .clip-list::-webkit-scrollbar-thumb { background: #21262d; border-radius: 4px; }
+    .clip-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 5px 0; border-bottom: 1px solid #21262d; cursor: pointer; gap: 6px;
+    }
+    .clip-item:last-child { border-bottom: none; }
+    .clip-item:hover .clip-text { color: #e6edf3; }
+    .clip-text {
+      font-size: 11px; color: #8b949e; flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .clip-ok { font-size: 10px; color: #3fb950; flex-shrink: 0; display: none; }
+
+    /* ── Annotator color swatches ── */
+    .swatch-row { display: flex; gap: 6px; margin-top: 7px; }
+    .swatch {
+      width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent;
+      cursor: default; flex-shrink: 0;
+    }
+
     /* ── Note ── */
     .note {
       font-size: 10px;
@@ -455,6 +478,18 @@
     <div class="note" style="margin-top:6px">Strips page to clean text. Click again to exit.</div>
   </div>
 
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">⏩</span> Video Speed</div>
+      <span class="badge" id="vspeed-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Speed control HUD on videos</div>
+      <label class="switch"><input type="checkbox" id="vspeed-toggle" /><span class="slider"></span></label>
+    </div>
+    <div class="note">Hover any video for − / + controls. Keys: <b style="color:#c9d1d9">,</b> slower · <b style="color:#c9d1d9">.</b> faster · <b style="color:#c9d1d9">/</b> reset</div>
+  </div>
+
 </div>
 
 <!-- ── CLEAN ── -->
@@ -534,6 +569,22 @@
 
   <div class="card">
     <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">📋</span> Clipboard History</div>
+      <span class="badge" id="clipboard-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Track last 50 copied texts</div>
+      <label class="switch"><input type="checkbox" id="clipboard-toggle" /><span class="slider"></span></label>
+    </div>
+    <div id="clipboard-panel" style="display:none; margin-top:8px;">
+      <input class="input" type="text" id="clipboard-search" placeholder="Search history…" style="margin-bottom:6px;" />
+      <div class="clip-list" id="clip-list"></div>
+      <button class="btn btn-del btn-sm" id="clip-clear-btn" style="margin-top:6px; width:100%;">Clear All History</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
       <div class="card-title-left"><span class="card-icon">🚦</span> Tab Limiter</div>
       <span class="badge" id="tablimit-badge">OFF</span>
     </div>
@@ -552,6 +603,26 @@
 
 <!-- ── TOOLS ── -->
 <div class="tab-panel" id="tab-tools">
+
+  <div class="card">
+    <div class="card-title">
+      <div class="card-title-left"><span class="card-icon">🖊</span> Page Annotator</div>
+      <span class="badge" id="annotator-badge">OFF</span>
+    </div>
+    <div class="toggle-row">
+      <div class="toggle-label">Highlight text on any page</div>
+      <label class="switch"><input type="checkbox" id="annotator-toggle" /><span class="slider"></span></label>
+    </div>
+    <div id="annotator-panel" style="display:none; margin-top:8px;">
+      <div class="status" id="annot-count" style="text-align:left; margin-top:0; margin-bottom:6px;"></div>
+      <div style="display:flex; gap:5px;">
+        <button class="btn btn-ghost btn-sm" id="annot-clear-page-btn" style="flex:1;">Clear this page</button>
+        <button class="btn btn-del btn-sm" id="annot-clear-all-btn" style="flex:1;">Clear all pages</button>
+      </div>
+    </div>
+    <div class="note">Select text → pick a highlight color. Highlights persist when you return.</div>
+  </div>
+
   <div class="card">
     <div class="card-title">
       <div class="card-title-left"><span class="card-icon">📋</span> Copy Tab URLs</div>

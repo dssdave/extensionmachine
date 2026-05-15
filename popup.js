@@ -28,7 +28,8 @@ function getTabs(allWindows, cb) {
 chrome.storage.local.get(
   ['allWindows','autostop','canvas','utmStrip','refererBlock','webrtc',
    'uaSpoof','uaPreset','cookiebanner','darkmode','tabLimitEnabled','tabLimit',
-   'sessions','sticky','chathide','paywall','appbanner'],
+   'sessions','sticky','chathide','paywall','appbanner',
+   'clipboardHistory','clipboardHistoryData','videoSpeed','annotator','pageAnnotations'],
   (data) => {
     // Tools
     const allWindows = !!data.allWindows;
@@ -66,6 +67,28 @@ chrome.storage.local.get(
     document.getElementById('chathide-toggle').checked = !!data.chathide;    setBadge('chathide-badge', !!data.chathide);
     document.getElementById('paywall-toggle').checked = !!data.paywall;      setBadge('paywall-badge',  !!data.paywall);
     document.getElementById('appbanner-toggle').checked = !!data.appbanner;  setBadge('appbanner-badge',!!data.appbanner);
+
+    // Video Speed
+    document.getElementById('vspeed-toggle').checked = !!data.videoSpeed;
+    setBadge('vspeed-badge', !!data.videoSpeed);
+
+    // Clipboard History
+    const clipOn = !!data.clipboardHistory;
+    document.getElementById('clipboard-toggle').checked = clipOn;
+    setBadge('clipboard-badge', clipOn);
+    if (clipOn) {
+      document.getElementById('clipboard-panel').style.display = 'block';
+      renderClipboardHistory(data.clipboardHistoryData || []);
+    }
+
+    // Page Annotator
+    const annotOn = !!data.annotator;
+    document.getElementById('annotator-toggle').checked = annotOn;
+    setBadge('annotator-badge', annotOn);
+    if (annotOn) {
+      document.getElementById('annotator-panel').style.display = 'block';
+      updateAnnotationCount(data.pageAnnotations);
+    }
 
     // Ad/tracker blockers — read state from DNR directly
     chrome.declarativeNetRequest.getEnabledRulesets((enabled) => {
@@ -265,3 +288,115 @@ document.getElementById('reader-btn').addEventListener('click', () => {
     setBadge(badgeId, e.target.checked);
   });
 });
+
+// ── Video Speed Controller ────────────────────────────────────────────────────
+
+document.getElementById('vspeed-toggle').addEventListener('change', (e) => {
+  chrome.storage.local.set({ videoSpeed: e.target.checked });
+  setBadge('vspeed-badge', e.target.checked);
+});
+
+// ── Clipboard History ─────────────────────────────────────────────────────────
+
+document.getElementById('clipboard-toggle').addEventListener('change', (e) => {
+  const on = e.target.checked;
+  chrome.storage.local.set({ clipboardHistory: on });
+  setBadge('clipboard-badge', on);
+  document.getElementById('clipboard-panel').style.display = on ? 'block' : 'none';
+  if (on) {
+    chrome.storage.local.get('clipboardHistoryData', (d) => renderClipboardHistory(d.clipboardHistoryData || []));
+  }
+});
+
+document.getElementById('clipboard-search').addEventListener('input', (e) => {
+  chrome.storage.local.get('clipboardHistoryData', (d) => renderClipboardHistory(d.clipboardHistoryData || [], e.target.value));
+});
+
+document.getElementById('clip-clear-btn').addEventListener('click', () => {
+  chrome.storage.local.set({ clipboardHistoryData: [] }, () => {
+    renderClipboardHistory([]);
+    document.getElementById('clipboard-search').value = '';
+  });
+});
+
+function renderClipboardHistory(items, filter = '') {
+  const list = document.getElementById('clip-list');
+  const filtered = filter ? items.filter(x => x.toLowerCase().includes(filter.toLowerCase())) : items;
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty">${filter ? 'No matches' : 'Nothing copied yet'}</div>`;
+    return;
+  }
+  list.innerHTML = '';
+  filtered.forEach(text => {
+    const item = document.createElement('div'); item.className = 'clip-item';
+    const span = document.createElement('span'); span.className = 'clip-text';
+    span.textContent = text; span.title = text;
+    const ok = document.createElement('span'); ok.className = 'clip-ok'; ok.textContent = '✓ Copied';
+    item.append(span, ok);
+    item.addEventListener('click', () => {
+      navigator.clipboard.writeText(text).then(() => {
+        ok.style.display = 'inline';
+        setTimeout(() => { ok.style.display = 'none'; }, 1500);
+      });
+    });
+    list.appendChild(item);
+  });
+}
+
+// Listen for new clipboard items while popup is open
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.clipboardHistoryData && document.getElementById('clipboard-toggle').checked) {
+    const filter = document.getElementById('clipboard-search').value;
+    renderClipboardHistory(changes.clipboardHistoryData.newValue || [], filter);
+  }
+});
+
+// ── Page Annotator ────────────────────────────────────────────────────────────
+
+document.getElementById('annotator-toggle').addEventListener('change', (e) => {
+  const on = e.target.checked;
+  chrome.storage.local.set({ annotator: on });
+  setBadge('annotator-badge', on);
+  document.getElementById('annotator-panel').style.display = on ? 'block' : 'none';
+  if (on) {
+    chrome.storage.local.get('pageAnnotations', (d) => updateAnnotationCount(d.pageAnnotations));
+  }
+});
+
+document.getElementById('annot-clear-page-btn').addEventListener('click', () => {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs[0]) return;
+    chrome.tabs.sendMessage(tabs[0].id, { action: 'clearPageAnnotations' }, () => {
+      if (chrome.runtime.lastError) {}
+    });
+    // Update count after clearing
+    setTimeout(() => {
+      chrome.storage.local.get('pageAnnotations', (d) => updateAnnotationCount(d.pageAnnotations));
+    }, 300);
+  });
+});
+
+document.getElementById('annot-clear-all-btn').addEventListener('click', () => {
+  chrome.storage.local.set({ pageAnnotations: {} }, () => {
+    updateAnnotationCount({});
+  });
+  // Clear visible highlights on current tab
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs[0]) chrome.tabs.sendMessage(tabs[0].id, { action: 'clearPageAnnotations' }, () => {
+      if (chrome.runtime.lastError) {}
+    });
+  });
+});
+
+function updateAnnotationCount(pageAnnotations) {
+  const el = document.getElementById('annot-count');
+  if (!el) return;
+  const annotations = pageAnnotations || {};
+  const pageCount = Object.keys(annotations).length;
+  const highlightCount = Object.values(annotations).reduce((sum, arr) => sum + arr.length, 0);
+  if (!pageCount) {
+    el.textContent = 'No annotations saved yet';
+  } else {
+    el.textContent = `${highlightCount} highlight${highlightCount !== 1 ? 's' : ''} across ${pageCount} page${pageCount !== 1 ? 's' : ''}`;
+  }
+}

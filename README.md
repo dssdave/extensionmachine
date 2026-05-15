@@ -54,6 +54,7 @@ All features are **off by default**. Open the extension popup and toggle what yo
 | **Autoplay Stopper** | Prevents videos and audio from playing automatically |
 | **Force Dark Mode** | Applies a CSS dark mode to all websites |
 | **Reader Mode** | Strips a page down to clean, readable text — click the button to activate on the current tab |
+| **Video Speed Controller** | Hover any HTML5 video for a speed HUD with − / + controls. Works on Netflix, YouTube, and any site. Keyboard shortcuts: `,` slower · `.` faster · `/` reset |
 
 ### 🧹 Clean
 
@@ -68,6 +69,7 @@ All features are **off by default**. Open the extension popup and toggle what yo
 
 | Feature | What it does |
 |---|---|
+| **Clipboard History** | Tracks the last 50 things you copied. Searchable list in the popup — click any item to copy it again |
 | **Session Saver** | Save and restore groups of tabs by name |
 | **Duplicate Tab Finder** | Finds and closes all duplicate tabs across all windows in one click |
 | **Tab Limiter** | Warns you when your open tab count exceeds a limit you set |
@@ -76,6 +78,7 @@ All features are **off by default**. Open the extension popup and toggle what yo
 
 | Feature | What it does |
 |---|---|
+| **Page Annotator** | Select any text to highlight it in yellow, green, blue, or pink. Highlights persist when you return to the page. Click a highlight to remove it |
 | **Copy Tab URLs** | Copies the URLs of all open tabs (current window or all windows) to your clipboard as a plain list |
 
 ---
